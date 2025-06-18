@@ -1,8 +1,8 @@
-import React, { useState, useContext } from "react";
+import React, { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { LOGIN } from "../../api/apiService";
-import { useNavigate, Link } from "react-router-dom";
+import { LOGIN, LOGIN_GOOGLE } from "../../api/apiService";
 import { UserContext } from "../../context/UserContext";
 
 const SectionContent = () => {
@@ -27,11 +27,27 @@ const SectionContent = () => {
                 } else {
                     toast.error("Không tìm thấy token trong phản hồi");
                 }
+            } else if (response && response.data && response.data.error === "token_expired") {
+                toast.error("Token đã hết hạn, vui lòng đăng nhập lại");
+                navigate("/Login");
             } else {
                 toast.error("Phản hồi đăng nhập thiếu dữ liệu");
             }
         } catch (error) {
             toast.error("Đăng nhập thất bại: " + error.message);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        try {
+            const response = await LOGIN_GOOGLE();
+            if (response && response.googleLoginUrl) {
+                window.location.href = response.googleLoginUrl; // Chuyển hướng người dùng đến URL đăng nhập Google
+            } else {
+                toast.error("Không nhận được URL đăng nhập Google");
+            }
+        } catch (error) {
+            toast.error("Đăng nhập Google thất bại: " + error.message);
         }
     };
 
@@ -41,10 +57,10 @@ const SectionContent = () => {
                 <div className="card-body">
                     <h4 className="card-title mb-4">Đăng nhập</h4>
                     <form onSubmit={handleSubmit}>
-                        <a href="#" className="btn btn-facebook btn-block mb-2">
+                        <a className="btn btn-facebook btn-block mb-2">
                             <i className="fab fa-facebook-f"></i> &nbsp; Sign in with Facebook
                         </a>
-                        <a href="#" className="btn btn-google btn-block mb-4">
+                        <a id="google" className="btn btn-google btn-block mb-4" onClick={handleGoogleSignIn}>
                             <i className="fab fa-google"></i> &nbsp; Sign in with Google
                         </a>
                         <div className="form-group">

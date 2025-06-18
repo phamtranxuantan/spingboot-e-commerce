@@ -9,10 +9,14 @@ function callApi(endpoint, method = "GET", body, params) {
         method,
         url,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": token ? `Bearer ${token}` : undefined,
+            ...(token && { "Authorization": `Bearer ${token}` }),
+            "Content-Type": body instanceof FormData ? "multipart/form-data" : "application/json"
         },
-        data: body ? JSON.stringify(body) : null,
+        // headers: {
+        //     "Authorization": token ? `Bearer ${token}` : undefined,
+        //     "Content-Type": body instanceof FormData ? "multipart/form-data" : "application/json"
+        // },
+        data: body instanceof FormData ? body : body ? JSON.stringify(body) : null,
     };
 
     console.log("callApi url: ", url);
@@ -49,13 +53,15 @@ function callApi(endpoint, method = "GET", body, params) {
         });
 }
 
-
 export function GET_ALL(endpoint, params) {
     return callApi(endpoint, "GET", null, params);
 }
 
 export function GET_ID(endpoint, id) {
     return callApi(endpoint + "/" + id, "GET");
+}
+export function GET_ID_ADDRESS(endpoint) {
+    return callApi(endpoint, "GET");
 }
 
 export function POST_ADD(endpoint, data) {
@@ -66,9 +72,14 @@ export function PUT_EDIT(endpoint, data) {
     return callApi(endpoint, "PUT", data);
 }
 
+export function PUT_IMAGE(endpoint, formData) {
+    return callApi(endpoint, "PUT", formData);
+}
+
 export function DELETE_ID(endpoint) {
     return callApi(endpoint, "DELETE");
 }
+
 
 export function LOGIN(body) {
     const API_URL_LOGIN = "http://localhost:8080/api/login";
@@ -84,6 +95,7 @@ export function LOGIN(body) {
         throw error;
     });
 }
+
 export function REGISTER(body) {
     const API_URL_REGISTER = "http://localhost:8080/api/register";
     return axiosInstance.post(API_URL_REGISTER, body, {
@@ -93,6 +105,21 @@ export function REGISTER(body) {
         },
     })
     .then((response) => response)
+    .catch((error) => {
+        console.log(error);
+        throw error;
+    });
+}
+
+export function LOGIN_GOOGLE() {
+    const API_URL_GOOGLE_LOGIN = "http://localhost:8080/api/public/oauth2/google";
+    return axiosInstance.get(API_URL_GOOGLE_LOGIN, {
+        headers: {
+            accept: "*/*",
+            "Content-Type": "application/json",
+        },
+    })
+    .then((response) => response.data)
     .catch((error) => {
         console.log(error);
         throw error;

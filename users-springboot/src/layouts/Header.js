@@ -5,6 +5,7 @@ import { UserContext } from '../context/UserContext';
 import { GET_ALL } from '../api/apiService';
 import { toast } from 'react-toastify';
 import { useSelector, useDispatch } from 'react-redux'; // Import useSelector và useDispatch từ react-redux
+import { FaUser } from 'react-icons/fa'; // Import FaUser from react-icons/fa
 import { setCart } from '../redux/actions/cartActions'; // Import action setCart
 
 const Header = () => {
@@ -82,8 +83,17 @@ const Header = () => {
                     <div className="collapse navbar-collapse" id="navbarTop4">
                         <ul className="navbar-nav me-auto">
                             <li className="nav-item">
-                                <span className="nav-link">
-                                    {userEmail ? `Xin chào: ${userEmail}` : <Link to="/Login"> Đăng nhập </Link>}
+                            <span className="nav-link">
+                                {userEmail ? (
+                                    <Link to="/IndexAccountProfile" className="nav-link">
+                                       Xin chào: {userEmail}
+                                    </Link>
+                                  
+                                ) : (
+                                    <Link to="/Login">
+                                    <i className="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                                    </Link>
+                                )}
                                 </span>
                             </li>
                         </ul>
@@ -141,17 +151,11 @@ const Header = () => {
                                         value={searchKeyword}
                                         onChange={(e) => setSearchKeyword(e.target.value)}
                                     />
-                                    <select className="form-select border-left" name="category_name">
-                                        <option value="">Tất cả loại</option>
-                                    </select>
                                 </div>
                             </form>
                         </div>
                         <div className="col col-lg col-md flex-grow-0">
                             <button className="btn btn-block btn-primary" type="submit" onClick={handleSearch}> Lọc </button>
-                        </div>
-                        <div className="col col-lg col-md flex-grow-0">
-                            <button className="btn btn-block btn-light" type="submit">cao</button>
                         </div>
                     </div>
                 </section>
@@ -190,31 +194,6 @@ const Header = () => {
                                     <Link className="dropdown-item" to="/ListingGrid">Xem tất cả</Link>
                                 </li>
                             </ul>
-                        </li>
-
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Điện tử</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Thời trang</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Sắc đẹp</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Động cơ</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Thể thao</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Làm vườn</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Ưu đãi</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#">Dưới $10</a>
                         </li>
                     </ul>
                 </nav>

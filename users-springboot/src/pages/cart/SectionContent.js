@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux"; // Import useDispatch and useSelector
-import { GET_ALL, GET_ID, DELETE_ID, PUT_EDIT } from "../../api/apiService";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from 'sweetalert2';
-import { Link, useNavigate } from "react-router-dom";
-import { fetchCartData, addToCart, removeFromCart, updateCartQuantity } from "../../redux/actions/cartActions"; // Import Redux actions
+import { DELETE_ID, GET_ALL, PUT_EDIT } from "../../api/apiService";
+import { fetchCartData, removeFromCart, updateCartQuantity } from "../../redux/actions/cartActions"; // Import Redux actions
 
 const SectionContent = () => {
     const dispatch = useDispatch(); // Initialize dispatch
@@ -136,7 +136,7 @@ const SectionContent = () => {
                                     <tbody>
                                         {cart.products.map(product => {
                                             const productDetail = products.find(p => p.productId === product.productId);
-                                            const imageUrl = product.image ? `http://localhost:8080/api/public/products/image/${product.image}` : 'default-image-url.jpg';
+                                            const imageUrl = product.imageProduct ? ` ${product.imageProduct}` : 'default-image-url.jpg';
                                             return (
                                                 <tr key={product.productId}>
                                                     <td>
@@ -153,7 +153,7 @@ const SectionContent = () => {
                                                             <div className="input-group-prepend">
                                                                 <button className="btn btn-light btn-sm" type="button" style={{ maxWidth: "20px" }} onClick={() => handleQuantityChange(product.productId, product.quantity + 1)}> + </button>
                                                             </div>
-                                                            <input type="text" className="form-control text-center" style={{ maxWidth: "30px", fontSize: "12px" }} value={product.quantity} readOnly />
+                                                            <input type="text" className="form-control text-center" style={{ maxWidth: "33px", fontSize: "10px" }} value={product.quantity} readOnly />
                                                             <div className="input-group-append">
                                                                 <button className="btn btn-light btn-sm" type="button" style={{ maxWidth: "20px" }} onClick={() => handleQuantityChange(product.productId, product.quantity > 1 ? product.quantity - 1 : 1)} disabled={product.quantity <= 1}> &minus; </button>
                                                             </div>
@@ -167,7 +167,6 @@ const SectionContent = () => {
                                                         </div>
                                                     </td>
                                                     <td className="text-right">
-                                                        <a data-original-title="Lưu vào danh sách yêu thích" title="" href="" className="btn btn-light" data-toggle="tooltip"> <i className="fa fa-heart"></i></a>
                                                         <button className="btn btn-light" onClick={() => handleRemoveProduct(product.productId)}> Xóa</button>
                                                     </td>
                                                 </tr>
@@ -186,21 +185,7 @@ const SectionContent = () => {
                         </div>
                     </main>
                     <aside className="col-md-3">
-                        <div className="card mb-3">
-                            <div className="card-body">
-                                <form>
-                                    <div className="form-group">
-                                        <label>Có mã giảm giá?</label>
-                                        <div className="input-group">
-                                            <input type="text" className="form-control" name="" placeholder="Mã giảm giá" />
-                                            <span className="input-group-append">
-                                                <button className="btn btn-primary">Áp dụng</button>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+                        
                         <div className="card">
                             <div className="card-body">
                                 {cart.totalPrice !== undefined && (

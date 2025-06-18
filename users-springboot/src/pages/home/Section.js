@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { GET_ALL } from "../../api/apiService";
 import startsActive from "../../assets/images/icons/stars-active.svg";
 import startsDisable from "../../assets/images/icons/starts-disable.svg";
-import { Link } from "react-router-dom";
 
 const cardTextStyle = { maxWidth: "80%" };
 
@@ -41,7 +41,7 @@ const Section = ({ categoryName, categoryId }) => {
                         <div className="col-xl-3 col-lg-3 col-md-4 col-6" key={row.productId}>
                             <div className="card card-product-grid">
                                 <Link to={`/Detail/${row.productId}`} className="img-wrap">
-                                    <img src={`http://localhost:8080/api/public/products/image/${row.image}`} alt={row.productName} />
+                                    <img src={` ${row.imageProduct}`} alt={row.productName} />
                                 </Link>
                                 <figcaption className="info-wrap">
                                     <ul className="rating-stars mb-1">
@@ -57,7 +57,7 @@ const Section = ({ categoryName, categoryId }) => {
                                             {row.productName}
                                         </Link>
                                     </div>
-                                    <div className="price h5 mt-2">${row.price}</div>
+                                    <div className="price h5 mt-2">{row.price} đ</div>
                                 </figcaption>
                             </div>
                         </div>

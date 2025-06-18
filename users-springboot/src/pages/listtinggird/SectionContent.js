@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { GET_ALL, GET_ID } from "../../api/apiService";
-import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const SectionContent = () => {
     const [products, setProducts] = useState([]);
@@ -196,26 +196,18 @@ const SectionContent = () => {
                             <figure className="card card-product-grid">
                                 <Link to={`/Detail/${product.productId}`} className="img-wrap">
                                     <span className="badge bg-danger">MỚI</span>
-                                    <img src={`http://localhost:8080/api/public/products/image/${product.image}`} alt={product.productName} />
+                                    <img src={` ${product.imageProduct}`} alt={product.productName} />
                                 </Link>
                                 <figcaption className="info-wrap">
                                     <a href="#" className="title mb-2">{product.productName}</a>
                                     <div className="price-wrap">
-                                        <span className="price">${product.specialPrice}</span>
+                                        <span className="price">{product.specialPrice} đ</span>
                                         <small className="text-muted">/mỗi sản phẩm</small>
                                     </div>
                                     <p className="mb-2">{product.quantity} Cái {" "} <small className="text-muted">(Số lượng tối thiểu)</small></p>
                                     <p className="text-muted">{product.categoryName}</p>
                                     <hr />
-                                    <p className="mb-3">
-                                        <span className="tag"><i className="fa fa-check"></i> Đã xác minh</span>
-                                        
-                                    </p>
-                                    <label className="custom-control mb-3 custom-checkbox">
-                                        <input type="checkbox" className="custom-control-input" />
-                                        <div className="custom-control-label">Thêm vào so sánh</div>
-                                    </label>
-                                    <a href="#" className="btn btn-outline-primary"><i className="fa fa-envelope"></i> Liên hệ nhà cung cấp</a>
+                                   
                                 </figcaption>
                             </figure>
                         </div>

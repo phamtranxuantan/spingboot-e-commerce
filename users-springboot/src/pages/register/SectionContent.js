@@ -61,12 +61,12 @@ const SectionContent = () => {
             ],
             address: {
                 addressId: 0,
-                street: "string",
-                buildingName: "string",
-                city: "string",
-                state: "string",
-                country: "string",
-                pincode: "string"
+                district: "string",
+                province: "string",
+                ward: "string",
+                name: "string",
+                phone: "0000000000",
+                addressDetail: "string"
             },
             cart: {
                 cartId: 0,

@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch } from 'react-redux'; // Import useDispatch từ react-redux
 import { useParams } from "react-router-dom";
-import { GET_ID, POST_ADD, GET_ALL } from "../../api/apiService";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useDispatch } from 'react-redux'; // Import useDispatch từ react-redux
+import { GET_ALL, GET_ID, POST_ADD } from "../../api/apiService";
 import { addToCart } from '../../redux/actions/cartActions'; // Import action addToCart
-
+import ReactMarkdown from "react-markdown"; 
 const ProductDetail = () => {
     const { productId } = useParams();
     const [product, setProduct] = useState(null);
@@ -80,10 +80,10 @@ const ProductDetail = () => {
                         <div className="card">
                             <article className="gallery-wrap"> 
                                 <div className="img-big-wrap">
-                                    <div> <a href="#"><img src={`http://localhost:8080/api/public/products/image/${product.image}`} alt="Sản phẩm" /></a></div>
+                                    <div> <a href="#"><img src={`${product.imageProduct}`} alt="Sản phẩm" /></a></div>
                                 </div> {/* slider-product.// */}
                                 <div className="thumbs-wrap">
-                                    <a href="#" className="item-thumb"> <img src={`http://localhost:8080/api/public/products/image/${product.image}`} alt="Sản phẩm" /></a>
+                                    <a href="#" className="item-thumb"> <img src={`${product.imageProduct}`} alt="Sản phẩm" /></a>
                                     {/* Add more thumbnails if available */}
                                 </div> {/* slider-nav.// */}
                             </article> {/* gallery-wrap .end// */}
@@ -94,45 +94,14 @@ const ProductDetail = () => {
 
                             <h2 className="title mt-3">{product.productName}</h2>
 
-                            <div className="rating-wrap my-3">
-                                <ul className="rating-stars">
-                                    <li style={{ width: "80%" }} className="stars-active"> 
-                                        <i className="fa fa-star"></i> <i className="fa fa-star"></i> 
-                                        <i className="fa fa-star"></i> <i className="fa fa-star"></i> 
-                                        <i className="fa fa-star"></i> 
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-star"></i> <i className="fa fa-star"></i> 
-                                        <i className="fa fa-star"></i> <i className="fa fa-star"></i> 
-                                        <i className="fa fa-star"></i> 
-                                    </li>
-                                </ul>
-                                <small className="label-rating text-muted">132 đánh giá</small>
-                                <small className="label-rating text-success"> <i className="fa fa-clipboard-check"></i> 154 đơn hàng </small>
-                            </div> {/* rating-wrap.// */}
-
                             <div className="mb-3"> 
-                                <var className="price h4">USD {product.price}</var> 
-                                <span className="text-muted">USD {product.price * 1.21} bao gồm VAT</span> 
-                            </div> {/* price-detail-wrap .// */}
+                                <var className="price h4">{product.price} đ</var> 
+                            </div> 
 
-                            <p>{product.description}</p>
-
+                            <p><ReactMarkdown>{product.description}</ReactMarkdown></p>
                             <dl className="row">
-                                <dt className="col-sm-3">Nhà sản xuất</dt>
-                                <dd className="col-sm-9"><a href="#">Great textile Ltd.</a></dd>
 
-                                <dt className="col-sm-3">Mã sản phẩm</dt>
-                                <dd className="col-sm-9">{product.productId}</dd>
-
-                                <dt className="col-sm-3">Bảo hành</dt>
-                                <dd className="col-sm-9">2 năm</dd>
-
-                                <dt className="col-sm-3">Thời gian giao hàng</dt>
-                                <dd className="col-sm-9">3-4 ngày</dd>
-
-                                <dt className="col-sm-3">Tình trạng</dt>
-                                <dd className="col-sm-9">Còn hàng</dd>
+                                <dt className="col-sm-3">Mã sản phẩm {product.productId}</dt>
                             </dl>
 
                             <div className="form-row mt-4">
@@ -151,9 +120,6 @@ const ProductDetail = () => {
                                     <button className="btn btn-primary" onClick={handleAddToCart}> 
                                         <i className="fas fa-shopping-cart"></i> <span className="text">Thêm vào giỏ hàng</span> 
                                     </button>
-                                    <a href="#" className="btn btn-light">
-                                        <i className="fas fa-envelope"></i> <span className="text">Liên hệ nhà cung cấp</span> 
-                                    </a>
                                 </div> {/* col.// */}
                             </div> {/* row.// */}
 

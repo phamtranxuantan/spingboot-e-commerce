@@ -44,9 +44,9 @@ function Home(props) {
           categoryId={category.categoryId} 
         />
       ))}
-      <Banner />
+      {/* <Banner />
       <Section1 />
-      <Banner1/>
+      <Banner1/> */}
       {/* templete-index1 */}
       {/* <Slider />
       <Deal />

@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate
-import { POST_ADD, GET_ALL,GET_ID } from "../../api/apiService"; // Import POST_ADD và GET_ID
-import { toast } from "react-toastify"; // Import Toastify để thông báo
+import { Field, Form, Formik } from 'formik';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ClipLoader from "react-spinners/ClipLoader";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { GET_ALL, GET_ID, POST_ADD } from "../../api/apiService";
 const SectionContent = () => {
-    const location = useLocation(); // Sử dụng useLocation để nhận state
-    const navigate = useNavigate(); // Sử dụng useNavigate để điều hướng
-    const { totalPrice, cartId } = location.state || { totalPrice: 0, cartId: null }; // Lấy dữ liệu từ state
-    const userEmail = localStorage.getItem("userEmail"); // Lấy email người dùng từ localStorage
-    const [paymentMethod, setPaymentMethod] = useState(""); // State để lưu phương thức thanh toán được chọn
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { totalPrice, cartId } = location.state || { totalPrice: 0, cartId: null };
+    const userEmail = localStorage.getItem("userEmail");
+    const [defaultAddress, setDefaultAddress] = useState(null);
 
-    const [loading, setLoading] = useState(false); // State để xử lý trạng thái loading
-    const [cartProducts, setCartProducts] = useState([]); // State để lưu thông tin sản phẩm trong giỏ hàng
-
+    const [loading, setLoading] = useState(false);
+    const [cartProducts, setCartProducts] = useState([]);
     useEffect(() => {
         const fetchCartProducts = async () => {
             if (cartId && userEmail) {
@@ -26,49 +26,55 @@ const SectionContent = () => {
             }
         };
 
+        const fetchDefaultAddress = async () => {
+            try {
+                const response = await GET_ALL(`users/addresses/default?email=${encodeURIComponent(userEmail)}`);
+                setDefaultAddress(response);
+            } catch (error) {
+                console.error('Error fetching default address:', error);
+            }
+        };
+
         fetchCartProducts();
+        fetchDefaultAddress();
     }, [cartId, userEmail]);
 
-    // Xử lý nút thanh toán
-    const handleCheckout = async (event) => {
-        event.preventDefault();
-    
+    const handleCheckout = async (values) => {
         if (!cartId || !userEmail) {
             toast.error("Vui lòng kiểm tra giỏ hàng và email người dùng!");
             return;
         }
-
-        if (!paymentMethod) {
+        if (!values.paymentMethod) {
             toast.warning("Vui lòng chọn phương thức thanh toán!");
             return;
         }
-    
+        
         setLoading(true);
-    
         try {
-            // Gửi request POST đến API để tạo đơn hàng
             const response = await POST_ADD(
-                `users/${userEmail}/carts/${cartId}/payments/${paymentMethod}/order`
+                `users/${userEmail}/carts/${cartId}/payments/${values.paymentMethod}/order`,
+                { name: defaultAddress.name, phone: defaultAddress.phone,  addressDetail: `${defaultAddress.addressDetail}, ${defaultAddress.ward}, ${defaultAddress.district}, ${defaultAddress.province}`}, 
             );
-    
+
             if (response?.orderId && response?.totalAmount) {
                 const { orderId } = response;
-                const totalAmount = totalPrice || response.totalAmount; // Ưu tiên giá trị của totalPrice nếu có
-    
-                let paymentUrl;
-                if (paymentMethod === "Payment-VNPay") {
-                    // Gửi yêu cầu tạo URL thanh toán VNPay
-                    paymentUrl = await createPaymentUrlVNPay(orderId, totalAmount);
-                } else if (paymentMethod === "MoMo") {
-                    // Gửi yêu cầu tạo URL thanh toán MoMo
-                    paymentUrl = await createPaymentUrlMoMo(orderId, totalAmount);
-                }
-    
-                if (paymentUrl) {
-                    // Chuyển hướng tới trang thanh toán
-                    window.location.href = paymentUrl;
+                const totalAmount = totalPrice || response.totalAmount;
+
+                if (values.paymentMethod === "COD") {
+                    toast.success("Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.");
+                    navigate(`/`);
                 } else {
-                    toast.error("Không thể tạo URL thanh toán. Vui lòng thử lại!");
+                    let paymentUrl;
+                    if (values.paymentMethod === "Payment-VNPay") {
+                        paymentUrl = await createPaymentUrlVNPay(orderId, totalAmount);
+                    } else if (values.paymentMethod === "MoMo") {
+                        paymentUrl = await createPaymentUrlMoMo(orderId, totalAmount);
+                    }
+                    if (paymentUrl) {
+                        window.location.href = paymentUrl;
+                    } else {
+                        toast.error("Không thể tạo URL thanh toán. Vui lòng thử lại!");
+                    }
                 }
             } else {
                 throw new Error("Phản hồi từ API không hợp lệ.");
@@ -76,11 +82,10 @@ const SectionContent = () => {
         } catch (error) {
             toast.error(error.message || "Đã xảy ra lỗi khi xử lý thanh toán. Vui lòng thử lại!");
         } finally {
-            setLoading(false); // Đảm bảo trạng thái loading kết thúc dù thành công hay thất bại
+            setLoading(false);
         }
     };
-    
-    // Helper function to convert an object to a query string
+
     const objectToQueryString = (obj) => {
         return Object.keys(obj)
             .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`)
@@ -92,12 +97,10 @@ const SectionContent = () => {
             toast.error("Thông tin không đầy đủ để tạo URL thanh toán.");
             return null;
         }
-    
+
         try {
             const queryString = objectToQueryString({ orderId, totalPrice });
             const paymentResponse = await GET_ALL(`paymentVnpay?${queryString}`);
-        
-            // Kiểm tra chi tiết cấu trúc
             if (paymentResponse?.url) {
                 return paymentResponse.url;
             } else {
@@ -114,13 +117,11 @@ const SectionContent = () => {
             toast.error("Thông tin không đầy đủ để tạo URL thanh toán.");
             return null;
         }
-    
+
         try {
             const queryString = objectToQueryString({ orderId, totalPrice });
             console.log("giá trị queryString", queryString);
             const paymentResponse = await GET_ALL(`paymentMomo?${queryString}`);
-        
-            // Kiểm tra chi tiết cấu trúc
             if (paymentResponse?.url) {
                 return paymentResponse.url;
             } else {
@@ -131,11 +132,21 @@ const SectionContent = () => {
             return null;
         }
     };
-
-    // Hiển thị thông báo nếu không có giỏ hàng
     if (!cartId) {
         return <div>Bạn chưa có giỏ hàng</div>;
     }
+    const paymentOptions = [
+        { code: 'Payment-VNPay', name: "VNPay", description: "Thanh toán qua VNPay" },
+        // { code: 'MoMo', name: " MoMo", description: "Thanh toán qua MoMo" },
+        // { code: 'COD', name: "Thanh toán khi nhận hàng", description: "Thanh toán trực tiếp khi nhận hàng" }
+    ];
+
+    const deliveryOptions = [
+       { id: 1, description: "Tiêu Chuẩn", estimated_time: "3-5 ngày", cost: 0 },
+        // { id: 2, description: "Giao hàng nhanh", estimated_time: "1-2 ngày", cost: 50000 },
+        // { id: 3, description: "Tiết Kiệm", estimated_time: "1-2 ngày", cost: 50000 },
+        // { id: 4, description: "Chậm", estimated_time: "1-2 ngày", cost: 50000 },
+    ];
 
     return (
         <>
@@ -155,7 +166,7 @@ const SectionContent = () => {
                                 {cartProducts.map((product) => (
                                     <li key={product.productId} className="list-group-item d-flex justify-content-between lh-condensed" style={{ borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
                                         <div className="d-flex align-items-center">
-                                            <img src={`http://localhost:8080/api/public/products/image/${product.image}`} alt={product.productName} style={{ width: '50px', height: '50px', marginRight: '10px' }} />
+                                            <img src={` ${product.imageProduct}`} alt={product.productName} style={{ width: '50px', height: '50px', marginRight: '10px' }} />
                                             <div>
                                                 <h6 className="my-0">{product.productName}</h6>
                                                 <span className="text-muted">{product.price} đ</span>
@@ -179,27 +190,109 @@ const SectionContent = () => {
                             </form> */}
                         </div>
                         <div className="col-md-8 order-md-1">
-                            <form className="needs-validation" noValidate>
-                                <hr className="mb-4" />
+                            <Formik
+                                initialValues={{ paymentMethod: '', shippingMethod: '' }}
+                                onSubmit={(values) => handleCheckout(values)}
+                            >
+                                {({ isSubmitting }) => (
+                                    <Form className="needs-validation" noValidate>
+                                        <h4 className="mb-3">Thông Tin Nhận Hàng</h4>
+                                        <p>
+                                            {defaultAddress ? (
+                                                <>
+                                                    <strong>Họ Tên:</strong> {defaultAddress.name} <br />
+                                                    <strong>Điện thoại:</strong> {defaultAddress.phone} <br />
+                                                    <strong>Địa chỉ:</strong> {defaultAddress.addressDetail}, {defaultAddress.ward}, {defaultAddress.district}, {defaultAddress.province} &nbsp;
+                                                </>
+                                            ) : (
+                                                <ClipLoader color="#fff" size={20} />
+                                            )}
+                                        </p>
+                                        <a href="#" onClick={() => navigate("/IndexAccountProfile/AddressProfile")} style={{ color: "#097854" }} className="btn-link">Thay đổi</a>
 
-                                <h4 className="mb-3">Thanh toán</h4>
-                                <div className="d-block my-3">
-                                    <p><b><i>Thanh toán qua ví điện tử</i></b></p>
-                                    <div className="custom-control custom-radio">
-                                        <input id="Payment-VNPay" name="paymentMethod" type="radio" className="custom-control-input" required onChange={() => setPaymentMethod("Payment-VNPay")} />
-                                        <label className="custom-control-label" htmlFor="Payment-VNPay">VNPay</label>
-                                    </div>
-                                    <div className="custom-control custom-radio">
-                                        <input id="momo" name="paymentMethod" type="radio" className="custom-control-input" required onChange={() => setPaymentMethod("MoMo")} />
-                                        <label className="custom-control-label" htmlFor="momo">MoMo</label>
-                                    </div>
-                                </div>
-                                
-                                <hr className="mb-4" />
-                                <button className="btn btn-primary btn-lg btn-block" type="submit" onClick={handleCheckout} disabled={loading}>
-                                    {loading ? 'Đang xử lý...' : 'Tiếp tục thanh toán'}
-                                </button>
-                            </form>
+                                        <hr className="mb-4" />
+
+                                        <h4 className="mb-3">Phương Thức Thanh Toán</h4>
+                                        <div className="row my-3">
+                                            {paymentOptions.map((data) => (
+                                                <div key={data.code} className="col-md-4 mb-3">
+                                                    <label
+                                                        htmlFor={`payment-${data.code}`}
+                                                        className="form-check-label border rounded p-3 d-block bg-light cursor-pointer h-100"
+                                                    >
+                                                        <div className="d-flex align-items-center justify-content-between">
+                                                            <div className="d-flex align-items-center">
+                                                                <div className="form-check me-3">
+                                                                    <Field
+                                                                        type="radio"
+                                                                        className="form-check-input"
+                                                                        value={data.code}
+                                                                        id={`payment-${data.code}`}
+                                                                        name="paymentMethod"
+                                                                    />
+                                                                </div>
+                                                                <div className="small">
+                                                                    <span className="fw-semibold text-dark d-block">
+                                                                        {data.name}
+                                                                    </span>
+                                                                    <p id="credit-card-text" className="mt-1 text-muted small mb-0">
+                                                                        {data.description}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+
+
+
+                                        <h4 className="mb-3">Phương Thức Giao Hàng</h4>
+                                        <div className="row my-3">
+                                            {deliveryOptions.map((data) => (
+                                                <div key={data.id} className="col-md-4 mb-3">
+                                                    <label
+                                                        htmlFor={`delivery-${data.id}`}
+                                                        className="form-check-label border rounded p-3 d-block bg-light z-depth-1 cursor-pointer h-100"
+                                                    >
+                                                        <div className="d-flex justify-content-between align-items-start">
+                                                            <span className="d-flex align-items-start">
+                                                                <div className="form-check me-3">
+                                                                    <Field
+                                                                        name="shippingMethod"
+                                                                        type="radio"
+                                                                        id={`delivery-${data.id}`}
+                                                                        value={data.id.toString()}
+                                                                        className="form-check-input"
+                                                                    />
+                                                                </div>
+                                                                <div className="small">
+                                                                    {data.description}
+                                                                    <p id="dhl-text" className="mt-1 text-muted small">
+                                                                        {data.estimated_time}
+                                                                    </p>
+                                                                </div>
+                                                            </span>
+                                                            <div>
+                                                                <p className="small fw-medium mb-0">
+                                                                    {data.cost} đ
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <hr className="mb-4" />
+
+                                        <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={isSubmitting || loading}>
+                                            {loading ? 'Đang xử lý...' : 'Tiếp tục thanh toán'}
+                                        </button>
+                                    </Form>
+                                )}
+                            </Formik>
                         </div>
                     </div>
                 </div>
