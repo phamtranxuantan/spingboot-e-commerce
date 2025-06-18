@@ -1,4 +1,4 @@
-import { AuthProvider } from "react-admin";
+import { AuthProvider, email } from "react-admin";
 import axios from "axios";
 
 interface LoginParams {
@@ -22,6 +22,8 @@ export const authProvider = {
             withCredentials: true,
         });
             const token = response.data["jwt-token"];
+            const email = response.data.email; 
+            localStorage.setItem("adminEmail", email);
             localStorage.setItem("jwt-token", token);
             localStorage.setItem("username", token);
             const userResponse = await axios.get(`http://localhost:8080/api/public/users/email/${username}`, {
@@ -40,6 +42,10 @@ export const authProvider = {
     logout: () => {
         localStorage.removeItem("jwt-token");
         localStorage.removeItem("username");
+        localStorage.removeItem("adminEmail");
+        localStorage.removeItem("cartId");
+        localStorage.removeItem("globalEmailCart");
+        localStorage.removeItem("globalCartId");
         return Promise.resolve();
     },
     // called when the API returns an error
@@ -47,6 +53,10 @@ export const authProvider = {
         if (status === 401 || status === 403) {
             localStorage.removeItem("jwt-token");
             localStorage.removeItem("username");
+            localStorage.removeItem("adminEmail");
+            localStorage.removeItem("cartId");
+            localStorage.removeItem("globalEmailCart");
+            localStorage.removeItem("globalCartId");
             return Promise.reject();
         }
         return Promise.resolve();

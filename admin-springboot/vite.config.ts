@@ -8,4 +8,7 @@ export default defineConfig({
         host: true,
     },
     base: './',
+    define: {
+        global: 'window', 
+      },
 });

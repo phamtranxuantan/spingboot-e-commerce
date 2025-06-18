@@ -1,4 +1,3 @@
-import jsonServerProvider from "ra-data-json-server";
 import axios from "axios";
 import {
   CreateParams,
@@ -8,15 +7,12 @@ import {
   DeleteManyResult,
   DeleteParams,
   DeleteResult,
-  GetListParams,
-  GetListResult,
   GetManyParams,
   GetManyReferenceParams,
   GetManyReferenceResult,
   GetManyResult,
   GetOneParams,
   GetOneResult,
-  Identifier,
   QueryFunctionContext,
   RaRecord,
   UpdateManyParams,
@@ -87,55 +83,88 @@ const httpClient = {
 };
 
 export const dataProvider: DataProvider = {
-  getList: (resource: string, { pagination = { page: 0, perPage: 10 }, sort = { field: 'id', order: 'ASC' }, filter = {} }) => {
-    const { page = 0, perPage = 10 } = pagination;
-    const { field, order } = sort;
-
-    const idFieldMapping: { [key: string]: string } = {
-        products: 'productId',
-        categories: 'categoryId',
-        carts: 'cartId',
-    };
-
-    const idField = idFieldMapping[resource] || 'id';
-
-    const query = {
-        pageNumber: page.toString(),
-        pageSize: perPage.toString(),
-        sortBy: field,
-        sortOrder: order,
-        ...filter,
-    };
-
-    const username = localStorage.getItem('username');
-    console.log('[User email]:', username);
-    console.log('[Filter]:', filter);
-
+  getList: (resource: string, { filter = {}, ...rest }) => {
     let url: string;
-
-    if (filter.search) {
-        const keyword = filter.search;
-        delete query.search;
-        url = `${apiUrl}/public/${resource}/keyword/${encodeURIComponent(keyword)}?${new URLSearchParams(query).toString()}`;
-    } else if (filter.categoryId) {
-        const categoryId = filter.categoryId;
-        delete query.categoryId;
-        url = `${apiUrl}/public/categories/${categoryId}/${resource}?${new URLSearchParams(query).toString()}`;
+    if (resource === "adminChatMessages") {
+      const {  admin,user  } = filter;
+      url = `${apiUrl}/admin/chat/messages?sender=${encodeURIComponent(admin)}&receiver=${encodeURIComponent(user)}`;
+    } else if (resource === "userChatMessages") {
+      const { sender, receiver } = filter;
+      url = `${apiUrl}/public/users/chat/messages?sender=${encodeURIComponent(sender)}&receiver=${encodeURIComponent(receiver)}`;
+    } else if (resource === "adminChatUsers") {
+      const adminEmail = localStorage.getItem("adminEmail");
+      url = `${apiUrl}/admin/chat/users?adminEmail=${encodeURIComponent(adminEmail || '')}`;
     } else {
-        url = resource === "carts"
-            ? `${apiUrl}/admin/${resource}`
-            : `${apiUrl}/public/${resource}?${new URLSearchParams(query).toString()}`;
+      const { pagination = { page: 0, perPage: 10 }, sort = { field: 'id', order: 'ASC' } } = rest;
+      const { page = 0, perPage = 10 } = pagination;
+      const { field, order } = sort;
+      const sortField = resource === 'users' ? 'userId' : field;
+      const idFieldMapping: { [key: string]: string } = {
+          products: 'productId',
+          categories: 'categoryId',
+          carts: 'cartId',
+      };
+      const pageNumber = page - 1;
+      const idField = idFieldMapping[resource] || 'id';
+
+      const query = {
+          pageNumber: pageNumber.toString(),
+          pageSize: perPage.toString(),
+          sortBy: sortField,
+          sortOrder: order,
+          ...filter,
+      };
+      // const username = localStorage.getItem('username');
+      if (resource === "users") {
+          url = `${apiUrl}/admin/users?${new URLSearchParams(query).toString()}`;
+      } else if (filter.search) {
+          const keyword = filter.search;
+          delete query.search;
+          url = `${apiUrl}/public/${resource}/keyword/${encodeURIComponent(keyword)}?${new URLSearchParams(query).toString()}`;
+      } else if (filter.categoryId) {
+          const categoryId = filter.categoryId;
+          delete query.categoryId;
+          url = `${apiUrl}/public/categories/${categoryId}/${resource}?${new URLSearchParams(query).toString()}`;
+      } else {
+          url = resource === "carts"
+              ? `${apiUrl}/admin/${resource}`
+              : `${apiUrl}/public/${resource}?${new URLSearchParams(query).toString()}`;
+      }
     }
 
     console.log('[Request URL]:', url);
 
     return httpClient.get(url)
         .then(({ json }) => {
-            const baseUrl = 'http://localhost:8080/api/public/products/image/';
+            if (resource === "adminChatMessages" || resource === "userChatMessages") {
+                // Loại bỏ tin nhắn trùng lặp dựa trên `id` hoặc `timestamp`
+                const uniqueMessages = json.filter(
+                  (msg: any, index: number, self: any[]) =>
+                    index === self.findIndex((m) => m.id === msg.id)
+                );
+                return { data: uniqueMessages, total: uniqueMessages.length };
+            }
+            if (resource === "adminChatUsers") {
+                // API trả về danh sách email, chuyển đổi thành đối tượng
+                const data = json.map((email: string) => ({ email }));
+                return { data, total: data.length };
+            }
+            const userImageBaseUrl = 'http://localhost:8080/api/public/users/imageUser/';
+            //const productImageBaseUrl = 'http://localhost:8080/api/public/products/imageProduct/';
+            const idFieldMapping: { [key: string]: string } = {
+                products: 'productId',
+                categories: 'categoryId',
+                carts: 'cartId',
+                users: 'userId', // Mapping cho users
+            };
+
+            const idField = idFieldMapping[resource] || 'id';
+
             const data = json.content.map((item: { [key: string]: any }) => ({
                 id: item[idField],
                 ...item,
-                image: typeof item.image === 'string' ? `${baseUrl}${item.image}` : null,
+                imageUser: resource === "users" && item.imageUser ? `${userImageBaseUrl}${item.imageUser}` : null, // URL đầy đủ cho imageUser
+                //imageProduct: resource === "products" && item.imageProduct ? `${productImageBaseUrl}${item.imageProduct}` : null, // URL đầy đủ cho imageProduct
             }));
 
             console.log('[Data list]:', data);
@@ -150,7 +179,6 @@ export const dataProvider: DataProvider = {
             throw error;
         });
   },
-
 
   delete: async <RecordType extends RaRecord = any>(resource: string, params: DeleteParams<RecordType>): Promise<DeleteResult<RecordType>> => {
     try {
@@ -199,15 +227,24 @@ export const dataProvider: DataProvider = {
   },
   create: async (resource: string, params: CreateParams): Promise<CreateResult> => {
     try {
-      console.log("data", params);
       let url: string;
-      if (resource === "products") {
+      if (resource === "adminChatMessages") {
+        url = `${apiUrl}/admin/chat/messages`; // API gửi tin nhắn
+      } else if (resource === "adminChatState") {
+        const { admin, user } = params.data;
+        if (!admin || !user) {
+          throw new Error("Missing required parameters: admin or user");
+        }
+        // Truyền tham số `admin` và `user` qua query string
+        url = `${apiUrl}/admin/chat/update-state?admin=${encodeURIComponent(admin)}&user=${encodeURIComponent(user)}`;
+      } else if (resource === "products") {
         url = `${apiUrl}/admin/categories/${params.data.categoryId}/${resource}`;
         delete params.data.categoryId;
-        params.data.image = 'default.png';
+       // params.data.imageProduct = "default.png";
       } else {
         url = `${apiUrl}/admin/${resource}`;
       }
+  
       const { data } = params;
       const response = await httpClient.post(url, data);
       return { data: { ...data, id: response.json.id } };
@@ -253,7 +290,6 @@ export const dataProvider: DataProvider = {
       carts: "cartId",
     };
     const idField = idFieldMapping[resource] || "id";
-    const baseUrl = "http://localhost:8080/api/public/products/image/";
     let data;
 
     if (resource === "carts") {
@@ -263,18 +299,16 @@ export const dataProvider: DataProvider = {
         products: result.json.products.map((product: any) => ({
           id: product.productId,
           productName: product.productName,
-          image: product.image ? `${baseUrl}${product.image}` : null,
+          imageProduct: product.imageProduct,
           description: product.description,
           quantity: product.quantity,
           price: product.price,
           discount: product.discount,
           specialPrice: product.specialPrice,
-          category: product.category
-            ? {
-              id: product.category.categoryId,
-              name: product.category.categoryName,
-            }
-            : null,
+          category: product.category ? {
+            id: product.category.categoryId,
+            name: product.category.categoryName,
+          } : null,
         })),
       };
     } else {
@@ -286,7 +320,7 @@ export const dataProvider: DataProvider = {
     console.log("Data:", data);
     return { data };
   },
-
+    
   getMany: async (resource: string, params: GetManyParams): Promise<GetManyResult> => {
     const idFieldMapping: { [key: string]: string } = {
       products: 'productId',
@@ -310,4 +344,5 @@ export const dataProvider: DataProvider = {
     const data = result.json.content.map((item: any) => ({ id: item[idField], ...item }));
     return { data };
   },
+  
 };

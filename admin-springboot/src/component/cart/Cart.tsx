@@ -1,5 +1,5 @@
-import { List, Datagrid, TextField, DeleteButton, EditButton, Create, Edit, SimpleForm, TextInput, useRecordContext, SimpleShowLayout, NumberField, ArrayField, ImageField, ReferenceField, Show, useRedirect, Identifier, useNotify, useRefresh } from "react-admin";
-import PDFButton from '../PDFButton';
+import { ArrayField, Datagrid, Identifier, ImageField, List, NumberField, Show, SimpleShowLayout, TextField, useNotify, useRecordContext, useRedirect, useRefresh } from "react-admin";
+import PDFButton from '../../PDFButton';
 const CustomPDFButton = () => {
     const record = useRecordContext();
     if (!record) {
@@ -59,17 +59,13 @@ export const CartShow = () => {
                  <NumberField source="totalPrice" label="Total Price" />
                  <ArrayField source="products" label="Products">
                      <Datagrid>
-                         <TextField source="productId" label="Product ID" />
                          <TextField source="productName" label="Product Name" />
-                         <ImageField source="image" label="Image" />
+                         <ImageField source="imageProduct" label="Image" />
                          <TextField source="description" label="Description" />
                          <NumberField source="quantity" label="Quantity" />
                          <NumberField source="price" label="Price" />
                          <NumberField source="discount" label="Discount" />
                          <NumberField source="specialPrice" label="Special Price" />
-                         <ReferenceField source="category.categoryId" reference="categories" label="Category">
-                             <TextField source="categoryName" />
-                         </ReferenceField>
                      </Datagrid>
                  </ArrayField>
              </SimpleShowLayout>

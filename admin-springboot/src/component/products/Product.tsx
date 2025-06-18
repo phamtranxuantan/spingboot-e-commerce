@@ -1,24 +1,22 @@
+import * as React from 'react';
 import {
     List,
     useRecordContext,
-   
     Datagrid,
     TextField,
-   
     NumberField,
     Create,
     Edit,
     SimpleForm,
     TextInput,
     NumberInput,
-   
     ReferenceInput,
     SelectInput,
     EditButton,
     DeleteButton
 } from 'react-admin';
-import { Link as RouterLink } from 'react-router-dom';
-
+import { Box } from '@mui/material';
+import { ImageUploadDialogButton } from './updateImage/ImageUploadDialogButton';
 // Custom Image Field Component
 const CustomImageField = ({ source }: { source: string }) => {
     const record = useRecordContext();
@@ -26,9 +24,11 @@ const CustomImageField = ({ source }: { source: string }) => {
         return <span>No Image</span>;
     }
     return (
-        <RouterLink to={`/products/${record.id}/update-image`}>
-            <img src={record[source]} alt="Product" style={{ width: '100px', height: 'auto' }} />
-        </RouterLink>
+        <img
+            src={record[source]}
+            alt="Product"
+            style={{ width: '100px', height: 'auto', objectFit: 'cover' }}
+        />
     );
 };
 
@@ -47,35 +47,41 @@ export const ProductList = () => (
             <TextField source="productId" label="Product ID" />
             <TextField source="productName" label="Product Name" />
             <TextField source="categoryName" label="Category Name" />
-            <CustomImageField source="image" />
+            {/* <CustomImageField source="imageProduct" /> */}
+           <CustomImageField source="imageProduct" label="Image" />
             <TextField source="description" label="Description" />
             <NumberField source="quantity" label="Quantity" />
             <NumberField source="price" label="Price" />
             <NumberField source="discount" label="Discount" />
             <NumberField source="specialPrice" label="Special Price" />
-            <EditButton />
+            <EditButton /> {/* Sử dụng EditButton để mở chế độ chỉnh sửa trong dialog */}
             <DeleteButton />
         </Datagrid>
     </List>
 );
 
-// Product Create Component
-export const ProductCreate = () => (
-    <Create>
-        <SimpleForm>
-            <TextInput source="productName" label="Product Name (Product name must contain at least 3 characters)" />
-            <TextInput source="description" label="Description (Product Description must contain at least 6 characters)" />
-            <NumberInput source="quantity" label="Quantity" />
-            <NumberInput source="price" label="Price" />
-            <NumberInput source="discount" label="Discount" />
-            <NumberInput source="specialPrice" label="Special Price" />
-            <ReferenceInput source="categoryId" reference="categories" label="Category">
-                <SelectInput optionText="categoryName" />
-            </ReferenceInput>
-        </SimpleForm>
-    </Create>
+const RichTextInput = React.lazy(() =>
+    import("ra-input-rich-text").then(module => ({
+        default: module.RichTextInput,
+    }))
 );
 
+
+
+const ImagePreview = () => {
+    const record = useRecordContext();
+    if (!record || !record.imageProduct) return null;
+
+    return (
+        <Box mb={2}>
+            <img
+                src={record.imageProduct}
+                alt="Current"
+                style={{ maxWidth: '200px', borderRadius: 8 }}
+            />
+        </Box>
+    );
+};
 // Product Edit Component
 export const ProductEdit = () => (
     <Edit>
@@ -85,9 +91,12 @@ export const ProductEdit = () => (
                 <SelectInput optionText="categoryName" />
             </ReferenceInput>
             <TextInput source="productName" />
-            <TextInput source="image" disabled />
-            <TextInput source="description" />
+            {/* <TextInput source="imageProduct" disabled /> */}
+            <ImagePreview />
+            <ImageUploadDialogButton/>
+             <TextInput source="description" />
             <NumberInput source="quantity" />
+            <NumberInput source="weight" label="Cân nặng(kg)" />
             <NumberInput source="price" />
             <NumberInput source="discount" />
             <NumberInput source="specialPrice" />
